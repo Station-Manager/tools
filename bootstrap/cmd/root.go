@@ -23,6 +23,11 @@ var db *database.Service
 var generateCmd = &cobra.Command{
 	Use: "generate",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		userId, err := cmd.Flags().GetInt64("user_id")
+		cobra.CheckErr(err)
+		if userId < 1 {
+			return fmt.Errorf("user_id must be greater than 0")
+		}
 		plain, hash, expiresAt, err := apikey.GenerateBootstrap()
 		if err != nil {
 			return err
@@ -33,7 +38,9 @@ var generateCmd = &cobra.Command{
 		fmt.Println("hash:", hash)
 		fmt.Println("expiresAt:", expiresAt.Format(time.RFC3339))
 
-		db.StoreBootstrap()
+		err = db.StoreBootstrap(userId, hash, expiresAt)
+		cobra.CheckErr(err)
+
 		return db.Close()
 	},
 }
@@ -91,4 +98,6 @@ func init() {
 
 	err = db.Migrate()
 	cobra.CheckErr(err)
+
+	generateCmd.Flags().Int64P("user_id", "u", 0, "user_id to generate bootstrap key for")
 }

@@ -2,6 +2,7 @@
   <configuration default="false" name="Bootstrap Tool" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="tools" />
     <working_directory value="$PROJECT_DIR$/tools/bootstrap" />
+    <parameters value="-u 1" />
     <EXTENSION ID="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
       <option name="IS_SUBST" value="false" />
