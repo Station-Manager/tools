@@ -1,0 +1,18 @@
+version: '3'
+
+dotenv: ['../.env']
+
+vars:
+  MODULE_NAME: "Importer Tool"
+  EXE_NAME: "importer"
+
+tasks:
+  default:
+    cmds:
+      - echo "Building {{.MODULE_NAME}} module..."
+      - go get -u
+      - go mod tidy
+      - go mod verify
+      - go vet ./...
+      - go build -o {{.EXE_NAME}}
+      - cp -f {{.EXE_NAME}} {{.SM_WORKING_DIR}}/{{.EXE_NAME}}

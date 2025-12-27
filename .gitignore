@@ -2,3 +2,4 @@ users
 copilot.*
 *.log
 *_Tool
+importer/.env
