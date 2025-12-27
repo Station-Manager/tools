@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -28,15 +29,19 @@ func Execute() {
 	cobra.CheckErr(importCmd.Execute())
 }
 
-func mustGetwd() string {
-	wd, err := os.Getwd()
+func exeDir() string {
+	exePath, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
-	return wd
+	resolved, err := filepath.EvalSymlinks(exePath)
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Dir(resolved)
 }
 
 func init() {
-	workingDir = mustGetwd()
+	workingDir = exeDir()
 	importCmd.Flags().StringP("file", "f", "", "ADIF file to import")
 }
