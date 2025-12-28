@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database/sqlite"
 	"github.com/Station-Manager/iocdi"
 	"github.com/Station-Manager/logging"
+	"github.com/Station-Manager/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +31,7 @@ var importCmd = &cobra.Command{
 	},
 }
 
-var workingDir string
+// var workingDir string
 var container *iocdi.Container
 var db *sqlite.Service
 
@@ -40,24 +39,14 @@ func Execute() {
 	cobra.CheckErr(importCmd.Execute())
 }
 
-func exeDir() string {
-	exePath, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	resolved, err := filepath.EvalSymlinks(exePath)
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Dir(resolved)
-}
-
 func init() {
-	workingDir = exeDir()
-	workingDir = filepath.Join(workingDir, "..")
+	workingDir, err := utils.WorkingDir()
+	if err != nil {
+		panic(err)
+	}
 
 	container = iocdi.New()
-	err := container.RegisterInstance("WorkingDir", workingDir)
+	err = container.RegisterInstance("workingdir", workingDir)
 	cobra.CheckErr(err)
 	err = container.Register(config.ServiceName, reflect.TypeOf((*config.Service)(nil)))
 	cobra.CheckErr(err)

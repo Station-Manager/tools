@@ -14,67 +14,42 @@ import (
 
 	"github.com/Station-Manager/adif"
 	"github.com/Station-Manager/database/sqlite/models"
+	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/utils"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/goccy/go-json"
 )
 
 func importer(filename string, logbookId int64) error {
-	if workingDir == "" {
-		return fmt.Errorf("working directory not set")
-	}
+	const op errors.Op = "cmd.importer"
 
-	if err := checkConfig(workingDir); err != nil {
-		return err
-	}
-
-	if err := checkDbDir(workingDir); err != nil {
-		return err
-	}
-
-	fpath, err := checkAdiFile(workingDir, filename)
+	wdObj, err := container.ResolveSafe("workingdir")
 	if err != nil {
-		return err
+		return errors.New(op).Err(err)
+	}
+
+	workDir, ok := wdObj.(string)
+	if !ok {
+		return errors.New(op).Msg("failed to cast working directory to string")
+	}
+
+	fpath, err := checkAdiFile(workDir, filename)
+	if err != nil {
+		return errors.New(op).Err(err)
 	}
 
 	data, err := readFile(fpath)
 	if err != nil {
-		return err
+		return errors.New(op).Err(err)
 	}
 
 	adiObj, err := adif.Marshal(data)
 	if err != nil {
-		return err
+		return errors.New(op).Err(err)
 	}
 
 	if err = insertIntoDatabase(adiObj, logbookId); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func checkConfig(workingDir string) error {
-	cfgFile := filepath.Join(workingDir, "config.json")
-
-	exists, err := utils.PathExists(cfgFile)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("config file not found at %s", cfgFile)
-	}
-	return nil
-}
-
-func checkDbDir(workingDir string) error {
-	dbDir := filepath.Join(workingDir, "db")
-	exists, err := utils.PathExists(dbDir)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("database directory not found at %s", dbDir)
+		return errors.New(op).Err(err)
 	}
 
 	return nil
@@ -118,13 +93,14 @@ func readFile(filePath string) ([]byte, error) {
 }
 
 func insertIntoDatabase(adiObj adif.Adif, logbookId int64) error {
+	const op errors.Op = "cmd.insertIntoDatabase"
 	if err := db.Open(); err != nil {
-		return fmt.Errorf("importer: failed to open database: %w", err)
+		return errors.New(op).Err(err).Msg("failed to open database connection")
 	}
 
 	sessionId, err := db.GenerateSession()
 	if err != nil {
-		return err
+		return errors.New(op).Err(err).Msg("failed to generate session ID")
 	}
 
 	// We assume each record takes 200ms to insert into the database
@@ -133,7 +109,7 @@ func insertIntoDatabase(adiObj adif.Adif, logbookId int64) error {
 
 	tx, cancelCtx, err := db.BeginTxContext(ctx)
 	if err != nil {
-		return err
+		return errors.New(op).Err(err).Msg("failed to begin transaction")
 	}
 	defer cancelCtx()
 	defer func(tx *sql.Tx) {
@@ -144,17 +120,17 @@ func insertIntoDatabase(adiObj adif.Adif, logbookId int64) error {
 	count := 0
 	for _, record := range adiObj.Records {
 		if model, err = adiRecordToQsoModel(&record, logbookId, sessionId); err != nil {
-			return fmt.Errorf("importer: failed to convert ADI record to QSO model: %w", err)
+			return errors.New(op).Err(err).Msg("failed to convert ADI record to QSO model")
 		}
 
 		if err = model.Insert(ctx, tx, boil.Infer()); err != nil {
-			return fmt.Errorf("importer: failed to insert QSO model into database: %w", err)
+			return errors.New(op).Err(err).Msg("failed to insert QSO model into database")
 		}
 		count++
 	}
 
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("importer: failed to commit transaction: %w", err)
+		return errors.New(op).Err(err).Msg("failed to commit transaction")
 	}
 
 	fmt.Printf("Inserted %d records into database\n", count)
@@ -163,7 +139,7 @@ func insertIntoDatabase(adiObj adif.Adif, logbookId int64) error {
 }
 
 func adiRecordToQsoModel(r *adif.Record, logbookId, sessionId int64) (*models.Qso, error) {
-
+	const op errors.Op = "cmd.adiRecordToQsoModel"
 	c := *r
 
 	// blank the fields NOT to be stored in the additionalData field
@@ -180,12 +156,12 @@ func adiRecordToQsoModel(r *adif.Record, logbookId, sessionId int64) (*models.Qs
 
 	data, err := json.Marshal(c)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(op).Err(err).Msg("failed to marshal ADI record to JSON")
 	}
 
 	freqMHz, err := strconv.ParseFloat(r.Freq, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid frequency value: %w", err)
+		return nil, errors.New(op).Err(err).Msg("invalid frequency value")
 	}
 	freqHz := int64(math.Round(freqMHz * 1_000_000))
 	rstSent := strings.TrimSpace(r.RstSent)
