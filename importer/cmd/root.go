@@ -34,7 +34,6 @@ var importCmd = &cobra.Command{
 
 var workingDir string
 var container *iocdi.Container
-var cfg *config.Service
 var db *sqlite.Service
 
 func Execute() {
@@ -70,13 +69,13 @@ func init() {
 	err = container.Build()
 	cobra.CheckErr(err)
 
-	cfgInstance, err := container.ResolveSafe(config.ServiceName)
-	cobra.CheckErr(err)
+	//cfgInstance, err := container.ResolveSafe(config.ServiceName)
+	//cobra.CheckErr(err)
 	var ok bool
-	cfg, ok = cfgInstance.(*config.Service)
-	if !ok {
-		panic("cfg is not of type *config.Service")
-	}
+	//cfg, ok = cfgInstance.(*config.Service)
+	//if !ok {
+	//	panic("cfg is not of type *config.Service")
+	//}
 	dbInstance, err := container.ResolveSafe(sqlite.ServiceName)
 	cobra.CheckErr(err)
 	db, ok = dbInstance.(*sqlite.Service)
