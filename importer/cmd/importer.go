@@ -19,7 +19,7 @@ import (
 	"github.com/goccy/go-json"
 )
 
-func importer(filename string) error {
+func importer(filename string, logbookId int64) error {
 	if workingDir == "" {
 		return fmt.Errorf("working directory not set")
 	}
@@ -47,7 +47,7 @@ func importer(filename string) error {
 		return err
 	}
 
-	if err = insertIntoDatabase(adiObj); err != nil {
+	if err = insertIntoDatabase(adiObj, logbookId); err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func readFile(filePath string) ([]byte, error) {
 	return data, nil
 }
 
-func insertIntoDatabase(adiObj adif.Adif) error {
+func insertIntoDatabase(adiObj adif.Adif, logbookId int64) error {
 	if err := db.Open(); err != nil {
 		return fmt.Errorf("importer: failed to open database: %w", err)
 	}
@@ -143,7 +143,7 @@ func insertIntoDatabase(adiObj adif.Adif) error {
 	var model *models.Qso
 	count := 0
 	for _, record := range adiObj.Records {
-		if model, err = adiRecordToQsoModel(&record, 1, sessionId); err != nil {
+		if model, err = adiRecordToQsoModel(&record, logbookId, sessionId); err != nil {
 			return fmt.Errorf("importer: failed to convert ADI record to QSO model: %w", err)
 		}
 

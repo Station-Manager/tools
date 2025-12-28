@@ -17,11 +17,15 @@ var importCmd = &cobra.Command{
 	Short: "Import ADIF files",
 	Long:  "Import ADIF files into the Station Manager database.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logbookId, err := cmd.Flags().GetInt64("logbook_id")
+		if err != nil {
+			return err
+		}
 		file, err := cmd.Flags().GetString("file")
 		if err != nil {
 			return err
 		}
-		if err = importer(file); err != nil {
+		if err = importer(file, logbookId); err != nil {
 			return err
 		}
 		return nil
@@ -81,4 +85,7 @@ func init() {
 	}
 
 	importCmd.Flags().StringP("file", "f", "", "ADIF file to import")
+	importCmd.Flags().Int64P("logbook_id", "l", 0, "Logbook ID to import into")
+	cobra.CheckErr(importCmd.MarkFlagRequired("file"))
+	cobra.CheckErr(importCmd.MarkFlagRequired("logbook_id"))
 }
