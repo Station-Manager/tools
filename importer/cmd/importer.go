@@ -127,7 +127,8 @@ func insertIntoDatabase(adiObj adif.Adif) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	// We assume each record takes 200ms to insert into the database
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(len(adiObj.Records))*(200*time.Millisecond))
 	defer cancel()
 
 	tx, cancelCtx, err := db.BeginTxContext(ctx)
@@ -187,6 +188,14 @@ func adiRecordToQsoModel(r *adif.Record, logbookId, sessionId int64) (*models.Qs
 		return nil, fmt.Errorf("invalid frequency value: %w", err)
 	}
 	freqHz := int64(math.Round(freqMHz * 1_000_000))
+	rstSent := strings.TrimSpace(r.RstSent)
+	if len(rstSent) > 3 {
+		rstSent = rstSent[:3]
+	}
+	rstRcvd := strings.TrimSpace(r.RstRcvd)
+	if len(rstRcvd) > 3 {
+		rstRcvd = rstRcvd[:3]
+	}
 
 	model := &models.Qso{
 		Call:           r.Call,
@@ -196,8 +205,8 @@ func adiRecordToQsoModel(r *adif.Record, logbookId, sessionId int64) (*models.Qs
 		QsoDate:        r.QsoDate,
 		TimeOn:         r.TimeOn,
 		TimeOff:        r.TimeOff,
-		RstSent:        r.RstSent,
-		RstRcvd:        r.RstRcvd,
+		RstSent:        rstSent,
+		RstRcvd:        rstRcvd,
 		Country:        r.Country,
 		AdditionalData: data,
 		LogbookID:      logbookId,
