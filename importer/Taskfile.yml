@@ -15,4 +15,4 @@ tasks:
       - go mod verify
       - go vet ./...
       - go build -o {{.EXE_NAME}}
-      - cp -f {{.EXE_NAME}} {{.SM_WORKING_DIR}}/{{.EXE_NAME}}
+      - sudo cp -f {{.EXE_NAME}} {{.SM_WORKING_DIR}}/{{.EXE_NAME}}

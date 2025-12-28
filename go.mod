@@ -8,6 +8,7 @@ require (
 	github.com/Station-Manager/apikey v0.0.5
 	github.com/Station-Manager/config v0.0.33
 	github.com/Station-Manager/database v0.0.47
+	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/iocdi v0.0.1
 	github.com/Station-Manager/logging v0.0.12
 	github.com/Station-Manager/types v0.0.69
@@ -19,7 +20,6 @@ require (
 
 require (
 	github.com/Station-Manager/enums v0.0.6 // indirect
-	github.com/Station-Manager/errors v0.0.11 // indirect
 	github.com/aarondl/inflect v0.0.2 // indirect
 	github.com/aarondl/null/v8 v8.1.3 // indirect
 	github.com/aarondl/randomize v0.0.2 // indirect
